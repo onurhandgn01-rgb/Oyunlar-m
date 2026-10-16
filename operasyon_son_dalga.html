@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Operasyon: Son Dalga</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101820;color:#f4f5f6;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;touch-action:none}
+#ui{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:14px}
+.top{display:flex;justify-content:space-between;gap:8px;font-weight:800;text-shadow:0 2px 4px #000}
+.pill{background:#111c;color:#fff;border:1px solid #718096aa;padding:9px 12px;border-radius:12px}
+#intro{position:fixed;inset:0;display:flex;pointer-events:auto;touch-action:manipulation;align-items:center;justify-content:center;background:linear-gradient(#09111ddd,#101820ee);z-index:3;padding:22px}
+.panel{max-width:420px;text-align:center;background:#192631;border:1px solid #4a6575;border-radius:22px;padding:26px;box-shadow:0 20px 80px #0008}
+h1{margin:0 0 10px;font-size:30px}p{line-height:1.5;color:#c4d0d8}
+button{pointer-events:auto;position:relative;z-index:10;touch-action:manipulation;border:0;border-radius:14px;padding:13px 18px;background:#e2b14b;color:#20242a;font-weight:900;font-size:16px}
+#fire{position:fixed;right:22px;bottom:30px;width:88px;height:88px;border-radius:50%;background:#e05252dd;color:white;border:3px solid #ffc6c6;font-size:14px;z-index:2}
+#stick{position:fixed;left:22px;bottom:30px;width:112px;height:112px;border-radius:50%;border:2px solid #cbd5e155;background:#cbd5d522;z-index:2}
+#knob{position:absolute;left:31px;top:31px;width:46px;height:46px;border-radius:50%;background:#e2b14bcc}
+#hint{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);white-space:nowrap;color:#c7d0d6;font-size:11px}
+canvas{display:block;width:100vw;height:100vh}
+</style></head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui"><div class="top"><div class="pill">🛡️ CAN: <span id="hp">100</span></div><div class="pill">🎯 SKOR: <span id="score">0</span></div><div class="pill">🌊 DALGA: <span id="wave">1</span></div></div></div>
+<div id="stick"><div id="knob"></div></div><button id="fire">ATEŞ ET</button><div id="hint">Sol tarafta hareket et · Sağ tuşla ateş et</div>
+<div id="intro"><div class="panel"><h1>🎖️ Operasyon: Son Dalga</h1><p>Üssü savun! Sol taraftaki kumandayla hareket et, <b>ATEŞ ET</b> düğmesiyle hedeflere ateş aç. Düşmanlara çarpmamaya çalış.</p><p>Bu, tamamen kurgusal ve arcade tarzı bir oyundur.</p><button id="start">GÖREVE BAŞLA</button></div></div>
+<script>
+(()=> {
+const c=document.querySelector('#game'),ctx=c.getContext('2d'),hpEl=document.querySelector('#hp'),scoreEl=document.querySelector('#score'),waveEl=document.querySelector('#wave'),intro=document.querySelector('#intro'),stick=document.querySelector('#stick'),knob=document.querySelector('#knob'),fire=document.querySelector('#fire');
+let w,h,dpr,player,enemies=[],bullets=[],sparks=[],score=0,hp=100,wave=1,spawn=0,playing=false,fireHeld=false,keys={},joy={x:0,y:0},joyId=null,last=0;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;c.width=w*dpr;c.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);if(player){player.x=Math.min(w-25,Math.max(25,player.x));player.y=Math.min(h-100,Math.max(70,player.y));}}
+addEventListener('resize',resize);resize();
+function reset(){score=0;hp=100;wave=1;spawn=0;enemies=[];bullets=[];sparks=[];player={x:w/2,y:h*.73,r:15,speed:245,cool:0};updateUI();}
+function updateUI(){hpEl.textContent=hp;scoreEl.textContent=score;waveEl.textContent=wave;}
+function enemy(){let r=13+Math.random()*7;enemies.push({x:30+Math.random()*Math.max(1,w-60),y:-30,r,speed:35+wave*7+Math.random()*30,hp:1+Math.floor(wave/4),phase:Math.random()*7});}
+function shoot(){if(player.cool<=0){bullets.push({x:player.x,y:player.y-20,vy:-540,r:4});player.cool=.19;}}
+function hit(x,y,col='#ffc857'){for(let i=0;i<7;i++)sparks.push({x,y,vx:(Math.random()-.5)*170,vy:(Math.random()-.5)*170,life:.35,col});}
+function kufurEt(){const sozler=['ANANI SİKİM LAN!','OHA AMK!','NEREDEN VURDUN LAN!','SIÇTIK AMK!'];const yazi=document.createElement('div');yazi.textContent=sozler[Math.floor(Math.random()*sozler.length)];yazi.style.cssText='position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);color:#ff3333;font-size:clamp(22px,6vw,34px);font-weight:900;text-shadow:2px 2px 3px #000;z-index:99;text-align:center;width:95%;pointer-events:none;';document.body.appendChild(yazi);document.body.style.boxShadow='inset 0 0 0 9999px #ff000033';setTimeout(()=>{yazi.remove();document.body.style.boxShadow='';},850);}
+function update(dt){if(!playing)return;player.cool-=dt;
+let mx=joy.x+(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),my=joy.y+(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0),len=Math.hypot(mx,my)||1;
+player.x=Math.max(20,Math.min(w-20,player.x+mx/len*player.speed*dt));player.y=Math.max(62,Math.min(h-35,player.y+my/len*player.speed*dt));
+if(fireHeld||keys[' '])shoot();
+spawn-=dt;if(spawn<=0){enemy();spawn=Math.max(.25,1.05-wave*.055);wave=Math.max(wave,Math.floor(score/100)+1);}
+for(const e of enemies){e.y+=e.speed*dt;e.x+=Math.sin(e.y*.012+e.phase)*25*dt;if(Math.hypot(e.x-player.x,e.y-player.y)<e.r+player.r){e.y=h+40;hp-=15;hit(player.x,player.y,'#ff5252');kufurEt();}}
+enemies=enemies.filter(e=>{if(e.y>h+30){hp-=8;return false}return true});
+for(const b of bullets){b.y+=b.vy*dt;for(const e of enemies){if(!e.dead&&Math.hypot(e.x-b.x,e.y-b.y)<e.r+b.r){e.hp--;b.dead=true;hit(b.x,b.y);if(e.hp<=0){e.dead=true;score+=10;}}}}
+bullets=bullets.filter(b=>!b.dead&&b.y>-20);enemies=enemies.filter(e=>!e.dead);
+for(const p of sparks){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}sparks=sparks.filter(p=>p.life>0);
+if(hp<=0){hp=0;playing=false;intro.style.display='flex';intro.querySelector('h1').textContent='GÖREV TAMAMLANDI';intro.querySelector('p').innerHTML='Skorun: <b>'+score+'</b><br>Bir tur daha denemek ister misin?';intro.querySelector('#start').textContent='TEKRAR OYNA';}
+updateUI();}
+function draw(){ctx.clearRect(0,0,w,h);let g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#172c36');g.addColorStop(1,'#101820');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ctx.strokeStyle='#7da0a022';ctx.lineWidth=1;for(let y=0;y<h;y+=45){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}for(let x=0;x<w;x+=45){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+for(const e of enemies){ctx.fillStyle='#e15a4f';ctx.beginPath();ctx.moveTo(e.x,e.y-e.r);ctx.lineTo(e.x+e.r,e.y);ctx.lineTo(e.x,e.y+e.r);ctx.lineTo(e.x-e.r,e.y);ctx.closePath();ctx.fill();ctx.fillStyle='#ffd0c8';ctx.fillRect(e.x-4,e.y-2,8,3);}
+for(const b of bullets){ctx.fillStyle='#ffdc76';ctx.shadowBlur=12;ctx.shadowColor='#ffb52e';ctx.fillRect(b.x-2,b.y-8,4,14);ctx.shadowBlur=0}
+if(player){ctx.fillStyle='#7ec8a5';ctx.beginPath();ctx.moveTo(player.x,player.y-19);ctx.lineTo(player.x+15,player.y+13);ctx.lineTo(player.x,player.y+7);ctx.lineTo(player.x-15,player.y+13);ctx.closePath();ctx.fill();ctx.fillStyle='#e8f3ec';ctx.fillRect(player.x-3,player.y-7,6,13);}
+for(const p of sparks){ctx.globalAlpha=Math.max(0,p.life/.35);ctx.fillStyle=p.col;ctx.fillRect(p.x,p.y,4,4)}ctx.globalAlpha=1;requestAnimationFrame(draw)}
+function loop(t){let dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);requestAnimationFrame(loop)}
+function startGame(e){if(e){e.preventDefault();e.stopPropagation();}reset();playing=true;intro.style.display='none';}
+const startBtn=document.querySelector('#start');
+startBtn.addEventListener('click',startGame);
+startBtn.addEventListener('touchend',startGame,{passive:false});
+fire.addEventListener('pointerdown',e=>{e.preventDefault();fireHeld=true;fire.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(v=>fire.addEventListener(v,()=>fireHeld=false));
+function setJoy(e){const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,dist=Math.hypot(dx,dy),max=35,scale=dist>max?max/dist:1;joy={x:dx*scale/max,y:dy*scale/max};knob.style.transform=`translate(${joy.x*35}px,${joy.y*35}px)`;}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();joyId=e.pointerId;stick.setPointerCapture(e.pointerId);setJoy(e)});
+stick.addEventListener('pointermove',e=>{if(e.pointerId===joyId)setJoy(e)});
+function releaseJoy(e){if(e.pointerId===joyId){joyId=null;joy={x:0,y:0};knob.style.transform='translate(0,0)'}}
+stick.addEventListener('pointerup',releaseJoy);stick.addEventListener('pointercancel',releaseJoy);
+addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' ')e.preventDefault()});addEventListener('keyup',e=>keys[e.key]=false);
+reset();requestAnimationFrame(draw);requestAnimationFrame(loop);
+})();
+</script></body></html>
