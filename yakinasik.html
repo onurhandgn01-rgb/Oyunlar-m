@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#100c18">
+<title>YakınAşk 💗</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#100c18;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{padding:20px;background:#21152c;position:sticky;top:0}
+h1{margin:0;color:#ff4b9a}
+main{max-width:600px;margin:auto;padding:16px}
+.hero,.card,.panel{background:#21182e;border:1px solid #493650;border-radius:20px;padding:17px;margin-bottom:14px}
+.hero{background:linear-gradient(135deg,#57214d,#251832)}
+p{color:#d3c3df;line-height:1.5}
+button,select,input,textarea{font:inherit;border-radius:12px;padding:12px}
+button{background:linear-gradient(110deg,#ff2e87,#9c5cff);color:white;border:0;font-weight:bold}
+select,input,textarea{background:#160f20;color:white;border:1px solid #493650}
+select{max-width:48%}
+.filters{display:flex;gap:8px;margin:15px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{padding:0;overflow:hidden}
+.photo{height:145px;display:grid;place-items:center;font-size:55px;background:linear-gradient(135deg,#784363,#34264c)}
+.info{padding:12px}
+.muted{color:#bbaec6;font-size:12px}
+.tag{display:inline-block;background:#ffffff12;padding:5px 7px;border-radius:20px;font-size:11px;margin:3px 2px 0 0}
+.actions{display:flex;gap:6px;margin-top:10px}
+.actions button{flex:1;padding:9px}
+.secondary{background:#ffffff12;border:1px solid #493650}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:#100c18f5;border-top:1px solid #493650;padding:8px}
+nav button{width:25%;background:none;color:#cbbbd5;font-size:12px;padding:9px 2px}
+.page{display:none;padding-bottom:80px}
+.page.active{display:block}
+.field{display:block;width:100%;margin:7px 0 14px}
+.item{padding:12px;background:#21182e;border-radius:13px;margin:9px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.notice{font-size:11px;color:#bbaec6;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+<h1>YakınAşk 💗</h1>
+<div class="muted">Yakınlaş, tanış, eşleş.</div>
+</header>
+<main>
+<section class="page active" id="discover">
+<div class="hero">
+<div>✨ 18 yaş ve üzeri</div>
+<h2>Aradığın kişi yakınında olabilir.</h2>
+<p>Yakınındaki insanları keşfet, beğen ve eşleşme başlat.</p>
+<button onclick="page('profile')">Profilini oluştur</button>
+</div>
+<h3>Senin için keşfet</h3>
+<div class="filters">
+<select id="distance" onchange="render()">
+<option value="5">5 km</option>
+<option value="25">25 km</option>
+<option value="50">50 km</option>
+<option value="100" selected>100 km</option>
+</select>
+<select id="age" onchange="render()">
+<option value="18-99">Tüm yaşlar (18+)</option>
+<option value="18-25">18–25</option>
+<option value="26-35">26–35</option>
+<option value="36-50">36–50</option>
+<option value="51-99">51+</option>
+</select>
+</div>
+<div class="grid" id="profiles"></div>
+<p class="notice">Demo sürümü: Profiller örnektir, gerçek kullanıcı değildir. Gerçek eşleşme ve mesajlaşma için sunucu bağlantısı gereklidir.</p>
+</section>
+
+<section class="page" id="nearby">
+<h2>📍 Yakınımdakiler</h2>
+<div class="hero">
+<h2>Yakın çevreni keşfet</h2>
+<p>Konum izni vererek konum özelliğini deneyebilirsin. Bu demo canlı kişileri göstermez.</p>
+<button onclick="getLocation()">Konum izni ver</button>
+</div>
+<div id="nearbyList"></div>
+</section>
+
+<section class="page" id="matches">
+<h2>💞 Eşleşmeler</h2>
+<div id="matchesList"></div>
+</section>
+
+<section class="page" id="chats">
+<h2>💬 Sohbetler</h2>
+<div id="chatsList"></div>
+<div id="room" style="display:none">
+<button class="secondary" onclick="closeChat()">← Geri</button>
+<h3 id="roomName"></h3>
+<div id="messages"></div>
+<form id="sendForm">
+<input id="message" class="field" placeholder="Mesaj yaz..." required maxlength="500">
+<button>Gönder</button>
+</form>
+</div>
+</section>
+
+<section class="page" id="profile">
+<h2>💗 Profilin</h2>
+<form id="profileForm">
+<label>Adın</label><input class="field" id="myName" required maxlength="30">
+<label>Yaşın (18+)</label><input class="field" id="myAge" type="number" min="18" max="99" required>
+<label>Kendinden bahset</label><textarea class="field" id="myBio" maxlength="180"></textarea>
+<label>İlgi alanların</label><input class="field" id="myTags" placeholder="Kahve, doğa, müzik">
+<button>Profili kaydet</button>
+</form>
+<div class="panel">
+<strong>🔒 Güvenlik</strong>
+<p>Kesin konumunu herkese açık paylaşma. İlk buluşmayı halka açık bir yerde yap.</p>
+</div>
+</section>
+</main>
+
+<nav>
+<button onclick="page('discover')">⌕<br>Keşfet</button>
+<button onclick="page('nearby')">⌖<br>Yakınımda</button>
+<button onclick="page('matches')">♡<br>Eşleşmeler</button>
+<button onclick="page('profile')">☻<br>Profil</button>
+</nav>
+
+<script>
+const people=[
+{id:1,n:"Selin",a:26,k:8,e:"👩🏻",b:"Seyahat ve kahve severim.",t:["Seyahat","Kahve"]},
+{id:2,n:"Ayşe",a:29,k:22,e:"👩🏼",b:"Deniz, kitaplar ve sohbet.",t:["Deniz","Kitap"]},
+{id:3,n:"Zeynep",a:24,k:34,e:"👩🏽",b:"Spontane planlar ve kahkaha.",t:["Doğa","Müzik"]},
+{id:4,n:"Ece",a:31,k:47,e:"👩🏾",b:"Gezi ve fotoğraf.",t:["Fotoğraf","Gezi"]},
+{id:5,n:"Deniz",a:27,k:61,e:"🧑🏻",b:"Yeni müzikler keşfetmeyi severim.",t:["Müzik","Sinema"]},
+{id:6,n:"Mert",a:30,k:73,e:"🧔🏻",b:"Doğa yürüyüşü ve kahve.",t:["Kamp","Kahve"]},
+{id:7,n:"Can",a:25,k:15,e:"🧑🏽",b:"Mizah ve güzel sohbet.",t:["Spor","Mizah"]},
+{id:8,n:"Derya",a:35,k:92,e:"👩🏻‍🦰",b:"Sanat ve seyahat.",t:["Sanat","Seyahat"]}
+];
+let liked=JSON.parse(localStorage.getItem("ya_liked")||"[]");
+let matched=JSON.parse(localStorage.getItem("ya_matched")||"[2,5]");
+let chats=JSON.parse(localStorage.getItem("ya_chats")||"{}");
+let chatId=null;
+const $=id=>document.getElementById(id);
+
+function page(id){
+document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===id));
+if(id==="nearby")renderNearby();
+if(id==="matches")renderMatches();
+if(id==="chats")renderChats();
+window.scrollTo(0,0);
+}
+function render(){
+let d=+$("distance").value;
+let [lo,hi]=$("age").value.split("-").map(Number);
+$("profiles").innerHTML=people.filter(p=>p.k<=d&&p.a>=lo&&p.a<=hi).map(p=>`
+<article class="card">
+<div class="photo">${p.e}</div>
+<div class="info"><strong>${p.n}, ${p.a}</strong>
+<div class="muted">📍 ${p.k} km</div><p>${p.b}</p>
+${p.t.map(t=>`<span class="tag">${t}</span>`).join("")}
+<div class="actions"><button onclick="like(${p.id})">${liked.includes(p.id)?"♥ Beğendin":"♡ Beğen"}</button><button class="secondary" onclick="this.closest('.card').remove()">✕</button></div>
+</div></article>`).join("")||"<p>Bu filtrelerde profil yok.</p>";
+}
+function like(id){
+if(!liked.includes(id))liked.push(id);
+if([1,3,7].includes(id)&&!matched.includes(id)){
+matched.push(id);alert("💞 Demo eşleşmesi! Sohbetler bölümünden deneyebilirsin.");
+}else alert("💗 Beğeni kaydedildi.");
+save();render();renderMatches();
+}
+function renderNearby(){
+$("nearbyList").innerHTML=people.filter(p=>p.k<=+$("distance").value).map(p=>`<div class="item"><span>${p.e} <b>${p.n}, ${p.a}</b><div class="muted">${p.k} km · ${p.t.join(" · ")}</div></span><button onclick="like(${p.id})">♡</button></div>`).join("");
+}
+function renderMatches(){
+$("matchesList").innerHTML=matched.map(id=>{let p=people.find(x=>x.id===id);return p?`<div class="item"><span>${p.e} <b>${p.n}, ${p.a}</b><div class="muted">${p.k} km · Demo eşleşme</div></span><button onclick="startChat(${id})">Sohbet</button></div>`:""}).join("")||"Henüz eşleşme yok.";
+}
+function renderChats(){
+if(chatId!==null){room(chatId);return}
+$("room").style.display="none";$("chatsList").style.display="block";
+$("chatsList").innerHTML=matched.map(id=>{let p=people.find(x=>x.id===id);return p?`<div class="item" onclick="startChat(${id})">${p.e} ${p.n}　›</div>`:""}).join("")||"Önce eşleşmelisin.";
+}
+function startChat(id){chatId=id;$("chatsList").style.display="none";$("room").style.display="block";room(id)}
+function room(id){
+let p=people.find(x=>x.id===id);$("roomName").textContent=p.n+" ile sohbet";
+$("messages").innerHTML=(chats[id]||[]).map(m=>`<div class="item">${m}</div>`).join("")||"<p>Bir merhaba de 👋</p>";
+}
+function closeChat(){chatId=null;renderChats()}
+$("sendForm").addEventListener("submit",e=>{e.preventDefault();let v=$("message").value.trim();if(!v)return;(chats[chatId]??=[]).push(v);$("message").value="";save();room(chatId)});
+$("profileForm").addEventListener("submit",e=>{
+e.preventDefault();let a=+$("myAge").value;
+if(a<18){alert("Bu uygulama yalnızca 18 yaş ve üzeri içindir.");return}
+localStorage.setItem("ya_profile",JSON.stringify({name:$("myName").value,age:a,bio:$("myBio").value,tags:$("myTags").value}));
+alert("Profil bu cihazda kaydedildi!");
+});
+function getLocation(){
+if(!navigator.geolocation){alert("Bu tarayıcı konumu desteklemiyor.");return}
+navigator.geolocation.getCurrentPosition(()=>alert("Konum izni alındı. Demo profiller gerçek kişiler değildir."),()=>alert("Konum izni verilmedi."),{timeout:10000});
+}
+function save(){
+localStorage.setItem("ya_liked",JSON.stringify(liked));
+localStorage.setItem("ya_matched",JSON.stringify(matched));
+localStorage.setItem("ya_chats",JSON.stringify(chats));
+}
+render();renderMatches();
+</script>
+</body>
+</html>
